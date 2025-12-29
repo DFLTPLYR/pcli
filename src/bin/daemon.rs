@@ -8,7 +8,7 @@ use std::{
     thread,
     time::Duration,
 };
-use sysinfo::{Disks, System};
+use sysinfo::{Disks, Networks, System};
 
 // local imports
 use pcli::{GpuInfo, SystemCPU, SystemMemory, SystemStatus};
@@ -29,12 +29,15 @@ fn main() {
 
     let mut sys = System::new_all();
     let mut disks = Disks::new_with_refreshed_list();
+    let mut networks = Networks::new_with_refreshed_list();
 
     loop {
         let mut locked_clients = clients.lock().unwrap();
         if !locked_clients.is_empty() {
             sys.refresh_all();
             disks.refresh(true);
+            networks.refresh(true);
+
             let cpu = SystemCPU {
                 cpu_architecture: std::env::consts::ARCH.to_string(),
                 cpu_usage: sys.global_cpu_usage(),
@@ -66,6 +69,15 @@ fn main() {
                 utilization: gpuinfo.load_pct() as f32,
             };
 
+            let network = networks
+                .iter()
+                .map(|(name, data)| pcli::NetworkInterface {
+                    name: name.to_string(),
+                    received_bytes: data.received(),
+                    transmitted_bytes: data.transmitted(),
+                })
+                .collect::<Vec<_>>();
+
             let disks = disks
                 .list()
                 .iter()
@@ -80,15 +92,18 @@ fn main() {
                 .collect::<Vec<_>>();
 
             let system_stats = SystemStatus {
-                name: System::name().unwrap_or_else(|| "<unknown>".to_owned()),
-                kernel_version: System::kernel_version().unwrap_or_else(|| "<unknown>".to_owned()),
-                os_version: System::os_version().unwrap_or_else(|| "<unknown>".to_owned()),
-                uptime: System::uptime(),
-                boot_time: System::boot_time(),
-                cpu: cpu,
-                memory: memory,
-                gpu: gpu,
-                disks: disks,
+                name: Some(System::name().unwrap_or_else(|| "<unknown>".to_owned())),
+                kernel_version: Some(
+                    System::kernel_version().unwrap_or_else(|| "<unknown>".to_owned()),
+                ),
+                os_version: Some(System::os_version().unwrap_or_else(|| "<unknown>".to_owned())),
+                uptime: Some(System::uptime()),
+                boot_time: Some(System::boot_time()),
+                cpu: Some(cpu),
+                memory: Some(memory),
+                gpu: Some(gpu),
+                disks: Some(disks),
+                network: Some(network),
             };
 
             let json = serde_json::to_string(&system_stats).unwrap();

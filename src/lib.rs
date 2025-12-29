@@ -4,15 +4,16 @@ pub mod modules;
 
 #[derive(Serialize, Deserialize)]
 pub struct SystemStatus {
-    pub name: String,
-    pub kernel_version: String,
-    pub os_version: String,
-    pub uptime: u64,
-    pub boot_time: u64,
-    pub cpu: SystemCPU,
-    pub memory: SystemMemory,
-    pub gpu: GpuInfo,
-    pub disks: Vec<SystemDisk>,
+    pub name: Option<String>,
+    pub kernel_version: Option<String>,
+    pub os_version: Option<String>,
+    pub uptime: Option<u64>,
+    pub boot_time: Option<u64>,
+    pub cpu: Option<SystemCPU>,
+    pub memory: Option<SystemMemory>,
+    pub gpu: Option<GpuInfo>,
+    pub disks: Option<Vec<SystemDisk>>,
+    pub network: Option<Vec<NetworkInterface>>,
 }
 
 #[derive(Serialize, Deserialize)]
