@@ -21,7 +21,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             hardware::get_hardware_info()?;
         }
         Commands::Launch { target } => {
-            shell::shellquery(target);
+            shell::shell_query(target);
         }
     }
     Ok(())
