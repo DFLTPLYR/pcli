@@ -12,6 +12,7 @@ pub struct SystemStatus {
     pub cpu: SystemCPU,
     pub memory: SystemMemory,
     pub gpu: GpuInfo,
+    pub disks: Vec<SystemDisk>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -30,6 +31,16 @@ pub struct SystemMemory {
     pub total_swap: u64,
     pub used_swap: u64,
     pub free_memory: u64,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct SystemDisk {
+    pub name: String,
+    pub total_space: u64,
+    pub available_space: u64,
+    pub kind: String,
+    pub file_system: String,
+    pub mount_point: String,
 }
 
 #[derive(Serialize, Deserialize)]

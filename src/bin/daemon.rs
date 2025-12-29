@@ -8,7 +8,7 @@ use std::{
     thread,
     time::Duration,
 };
-use sysinfo::System;
+use sysinfo::{Disks, System};
 
 // local imports
 use pcli::{GpuInfo, SystemCPU, SystemMemory, SystemStatus};
@@ -65,6 +65,20 @@ fn main() {
                 utilization: gpuinfo.load_pct() as f32,
             };
 
+            let disks = Disks::new_with_refreshed_list();
+            let disks = disks
+                .list()
+                .iter()
+                .map(|disk| pcli::SystemDisk {
+                    name: disk.name().to_string_lossy().to_string(),
+                    total_space: disk.total_space(),
+                    available_space: disk.available_space(),
+                    kind: format!("{:?}", disk.kind()),
+                    file_system: disk.file_system().to_string_lossy().to_string(),
+                    mount_point: disk.mount_point().to_string_lossy().to_string(),
+                })
+                .collect::<Vec<_>>();
+
             let system_stats = SystemStatus {
                 name: System::name().unwrap_or_else(|| "<unknown>".to_owned()),
                 kernel_version: System::kernel_version().unwrap_or_else(|| "<unknown>".to_owned()),
@@ -74,6 +88,7 @@ fn main() {
                 cpu: cpu,
                 memory: memory,
                 gpu: gpu,
+                disks: disks,
             };
 
             let json = serde_json::to_string(&system_stats).unwrap();
