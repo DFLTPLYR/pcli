@@ -7,7 +7,7 @@ use pcli::modules::hardware;
 
 #[derive(Parser)]
 #[command(name = "pcli")]
-#[command(about = "CLI client for system stats daemon")]
+#[command(about = "CLI client for system stats daemon and more for Dfltplyr :D")]
 struct Cli {
     #[command(subcommand)]
     command: Commands,

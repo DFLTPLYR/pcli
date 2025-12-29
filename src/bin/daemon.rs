@@ -7,7 +7,8 @@ use std::{
     time::Duration,
 };
 use sysinfo::System;
-use pcli::SystemMemory;
+
+use pcli::{SystemCPU, SystemMemory, SystemStatus};
 
 fn main() {
     let socket_path = "/tmp/sysinfo.sock";
@@ -28,21 +29,39 @@ fn main() {
     loop {
         let mut locked_clients = clients.lock().unwrap();
         if !locked_clients.is_empty() {
-            sys.refresh_memory();
+            sys.refresh_all();
 
-            let info = SystemMemory {
-                total_memory: sys.total_memory(),
-                used_memory: sys.used_memory(),
+            let cpu = SystemCPU {
+                cpu_architecture: std::env::consts::ARCH.to_string(),
+                physical_cores: sysinfo::System::physical_core_count().unwrap_or(0),
+                cpu_usage: sys.global_cpu_usage(),
+                cpu_frequency: sys.cpus().get(0).map(|c| c.frequency()).unwrap_or(0),
+                cpu_cores: sys.cpus().len(),
             };
 
-            let json = serde_json::to_string(&info).unwrap();
+            let memory = SystemMemory {
+                total_memory: sys.total_memory(),
+                used_memory: sys.used_memory(),
+                total_swap: sys.total_swap(),
+                used_swap: sys.used_swap(),
+                free_memory: sys.free_memory(),
+            };
 
-            locked_clients.retain(|mut client| {
-                writeln!(client, "{}", json).is_ok()
-            });
+            let system_stats = SystemStatus {
+                name: System::name().unwrap_or_else(|| "<unknown>".to_owned()),
+                kernel_version: System::kernel_version().unwrap_or_else(|| "<unknown>".to_owned()),
+                os_version: System::os_version().unwrap_or_else(|| "<unknown>".to_owned()),
+                uptime: System::uptime(),
+                boot_time: System::boot_time(),
+                cpu: cpu,
+                memory: memory,
+            };
+
+            let json = serde_json::to_string(&system_stats).unwrap();
+
+            locked_clients.retain(|mut client| writeln!(client, "{}", json).is_ok());
         }
         drop(locked_clients);
         thread::sleep(Duration::from_secs(1));
     }
 }
-
