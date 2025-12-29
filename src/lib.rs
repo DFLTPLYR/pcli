@@ -1,4 +1,4 @@
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 pub mod modules;
 
@@ -11,6 +11,7 @@ pub struct SystemStatus {
     pub boot_time: u64,
     pub cpu: SystemCPU,
     pub memory: SystemMemory,
+    pub gpu: GpuInfo,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -31,3 +32,15 @@ pub struct SystemMemory {
     pub free_memory: u64,
 }
 
+#[derive(Serialize, Deserialize)]
+pub struct GpuInfo {
+    pub vendor: String,
+    pub model: String,
+    pub family: String,
+    pub device_id: u32,
+    pub total_vram: u64,
+    pub used_vram: u64,
+    pub free_vram: u64,
+    pub temperature: f32,
+    pub utilization: f32,
+}

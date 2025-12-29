@@ -1,3 +1,5 @@
+// cargo imports
+use gfxinfo::active_gpu;
 use std::{
     fs,
     io::Write,
@@ -8,7 +10,8 @@ use std::{
 };
 use sysinfo::System;
 
-use pcli::{SystemCPU, SystemMemory, SystemStatus};
+// local imports
+use pcli::{GpuInfo, SystemCPU, SystemMemory, SystemStatus};
 
 fn main() {
     let socket_path = "/tmp/sysinfo.sock";
@@ -47,6 +50,21 @@ fn main() {
                 free_memory: sys.free_memory(),
             };
 
+            let gpudata = active_gpu().expect("Failed to get active GPU");
+            let gpuinfo = gpudata.info();
+
+            let gpu = GpuInfo {
+                vendor: gpudata.vendor().to_string(),
+                model: gpudata.model().to_string(),
+                family: gpudata.family().to_string(),
+                device_id: *gpudata.device_id(),
+                total_vram: gpuinfo.total_vram(),
+                used_vram: gpuinfo.used_vram(),
+                free_vram: gpuinfo.total_vram() - gpuinfo.used_vram(),
+                temperature: gpuinfo.temperature() as f32 / 1000.0,
+                utilization: gpuinfo.load_pct() as f32,
+            };
+
             let system_stats = SystemStatus {
                 name: System::name().unwrap_or_else(|| "<unknown>".to_owned()),
                 kernel_version: System::kernel_version().unwrap_or_else(|| "<unknown>".to_owned()),
@@ -55,6 +73,7 @@ fn main() {
                 boot_time: System::boot_time(),
                 cpu: cpu,
                 memory: memory,
+                gpu: gpu,
             };
 
             let json = serde_json::to_string(&system_stats).unwrap();
