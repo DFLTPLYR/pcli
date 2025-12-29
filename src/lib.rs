@@ -1,3 +1,4 @@
+use clap::Subcommand;
 use serde::{Deserialize, Serialize};
 
 pub mod modules;
@@ -62,4 +63,23 @@ pub struct GpuInfo {
     pub free_vram: u64,
     pub temperature: f32,
     pub utilization: f32,
+}
+
+// Cli
+#[derive(Subcommand)]
+pub enum Commands {
+    /// Get hardware information
+    Hardware,
+    /// Shell actions
+    Launch {
+        #[clap(subcommand)]
+        target: LaunchTarget,
+    },
+}
+
+#[derive(Subcommand)]
+pub enum LaunchTarget {
+    WallpaperPicker,
+    AppLauncher,
+    ExtendedBar,
 }

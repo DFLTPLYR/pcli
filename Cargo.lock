@@ -444,6 +444,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f52b00d39961fc5b2736ea853c9cc86238e165017a493d1d5c8eac6bdc4cc273"
 
 [[package]]
+name = "niri-ipc"
+version = "25.11.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "12bd9eb4e437f5282ce853cf66837658379cb537b4b6bae687da59246005329a"
+dependencies = [
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "ntapi"
 version = "0.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -522,6 +532,7 @@ dependencies = [
  "clap",
  "daemonize",
  "gfxinfo",
+ "niri-ipc",
  "serde",
  "serde_json",
  "sysinfo",

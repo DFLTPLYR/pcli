@@ -1,9 +1,9 @@
 // cargo imports
-use clap::{Parser, Subcommand};
-
+use clap::Parser;
 
 // local imports
-use pcli::modules::hardware;
+use pcli::Commands;
+use pcli::modules::{hardware, shell};
 
 #[derive(Parser)]
 #[command(name = "pcli")]
@@ -13,16 +13,6 @@ struct Cli {
     command: Commands,
 }
 
-#[derive(Subcommand)]
-enum Commands {
-    /// Get hardware information
-    Hardware,
-    /// QS actions
-    Qs { action: String },
-    /// Compositor commands
-    Compositor { action: String },
-}
-
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let cli = Cli::parse();
 
@@ -30,11 +20,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         Commands::Hardware => {
             hardware::get_hardware_info()?;
         }
-        Commands::Qs { action } => {
-            println!("QS action requested: {}", action);
-        }
-        Commands::Compositor { action } => {
-            println!("Compositor action requested: {}", action);
+        Commands::Launch { target } => {
+            shell::shellquery(target);
         }
     }
     Ok(())
