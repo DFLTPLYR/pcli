@@ -7,7 +7,7 @@ use std::{
     time::Duration,
 };
 use sysinfo::System;
-use pcli::MySysInfo;
+use pcli::SystemMemory;
 
 fn main() {
     let socket_path = "/tmp/sysinfo.sock";
@@ -26,20 +26,22 @@ fn main() {
     let mut sys = System::new_all();
 
     loop {
-        sys.refresh_memory();
-
-        let info = MySysInfo {
-            total_memory: sys.total_memory(),
-            used_memory: sys.used_memory(),
-        };
-
-        let json = serde_json::to_string(&info).unwrap();
-
         let mut locked_clients = clients.lock().unwrap();
-        locked_clients.retain(|mut client| {
-            writeln!(client, "{}", json).is_ok()  
-        });
+        if !locked_clients.is_empty() {
+            sys.refresh_memory();
 
+            let info = SystemMemory {
+                total_memory: sys.total_memory(),
+                used_memory: sys.used_memory(),
+            };
+
+            let json = serde_json::to_string(&info).unwrap();
+
+            locked_clients.retain(|mut client| {
+                writeln!(client, "{}", json).is_ok()
+            });
+        }
+        drop(locked_clients);
         thread::sleep(Duration::from_secs(1));
     }
 }

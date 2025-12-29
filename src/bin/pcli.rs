@@ -1,10 +1,9 @@
+// cargo imports
 use clap::{Parser, Subcommand};
-use std::{
-    io::{BufRead, BufReader},
-    os::unix::net::UnixStream,
-};
-use serde_json::from_str;
-use pcli::MySysInfo;
+
+
+// local imports
+use pcli::modules::hardware;
 
 #[derive(Parser)]
 #[command(name = "pcli")]
@@ -24,20 +23,12 @@ enum Commands {
     Compositor { action: String },
 }
 
-fn main() {
+fn main() -> Result<(), Box<dyn std::error::Error>> {
     let cli = Cli::parse();
 
     match &cli.command {
         Commands::Hardware => {
-            let stream = UnixStream::connect("/tmp/sysinfo.sock")
-                .expect("Daemon not running");
-            let reader = BufReader::new(stream);
-
-            for line in reader.lines() {
-                let line = line.unwrap();
-                let info: MySysInfo = from_str(&line).unwrap();
-                println!("Memory: {} / {}", info.used_memory, info.total_memory);
-            }
+            hardware::get_hardware_info()?;
         }
         Commands::Qs { action } => {
             println!("QS action requested: {}", action);
@@ -46,5 +37,5 @@ fn main() {
             println!("Compositor action requested: {}", action);
         }
     }
+    Ok(())
 }
-
