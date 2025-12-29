@@ -28,12 +28,13 @@ fn main() {
     });
 
     let mut sys = System::new_all();
+    let mut disks = Disks::new_with_refreshed_list();
 
     loop {
         let mut locked_clients = clients.lock().unwrap();
         if !locked_clients.is_empty() {
             sys.refresh_all();
-
+            disks.refresh(true);
             let cpu = SystemCPU {
                 cpu_architecture: std::env::consts::ARCH.to_string(),
                 cpu_usage: sys.global_cpu_usage(),
@@ -65,7 +66,6 @@ fn main() {
                 utilization: gpuinfo.load_pct() as f32,
             };
 
-            let disks = Disks::new_with_refreshed_list();
             let disks = disks
                 .list()
                 .iter()

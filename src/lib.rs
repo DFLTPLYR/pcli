@@ -44,6 +44,13 @@ pub struct SystemDisk {
 }
 
 #[derive(Serialize, Deserialize)]
+pub struct NetworkInterface {
+    pub name: String,
+    pub received_bytes: u64,
+    pub transmitted_bytes: u64,
+}
+
+#[derive(Serialize, Deserialize)]
 pub struct GpuInfo {
     pub vendor: String,
     pub model: String,
