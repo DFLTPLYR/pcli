@@ -4,7 +4,7 @@ pub mod modules;
 
 #[derive(Serialize, Deserialize)]
 pub struct SystemStatus {
-    pub name: Option<String>,
+    pub os: Option<String>,
     pub kernel_version: Option<String>,
     pub os_version: Option<String>,
     pub uptime: Option<u64>,

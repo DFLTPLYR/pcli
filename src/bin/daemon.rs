@@ -92,7 +92,7 @@ fn main() {
                 .collect::<Vec<_>>();
 
             let system_stats = SystemStatus {
-                name: Some(System::name().unwrap_or_else(|| "<unknown>".to_owned())),
+                os: Some(System::name().unwrap_or_else(|| "<unknown>".to_owned())),
                 kernel_version: Some(
                     System::kernel_version().unwrap_or_else(|| "<unknown>".to_owned()),
                 ),
