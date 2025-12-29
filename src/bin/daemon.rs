@@ -36,18 +36,18 @@ fn main() {
 
             let cpu = SystemCPU {
                 cpu_architecture: std::env::consts::ARCH.to_string(),
-                physical_cores: sysinfo::System::physical_core_count().unwrap_or(0),
                 cpu_usage: sys.global_cpu_usage(),
                 cpu_frequency: sys.cpus().get(0).map(|c| c.frequency()).unwrap_or(0),
+                physical_cores: sysinfo::System::physical_core_count().unwrap_or(0),
                 cpu_cores: sys.cpus().len(),
             };
 
             let memory = SystemMemory {
                 total_memory: sys.total_memory(),
                 used_memory: sys.used_memory(),
+                free_memory: sys.free_memory(),
                 total_swap: sys.total_swap(),
                 used_swap: sys.used_swap(),
-                free_memory: sys.free_memory(),
             };
 
             let gpudata = active_gpu().expect("Failed to get active GPU");

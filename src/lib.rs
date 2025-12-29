@@ -17,10 +17,10 @@ pub struct SystemStatus {
 #[derive(Serialize, Deserialize)]
 pub struct SystemCPU {
     pub cpu_architecture: String,
-    pub physical_cores: usize,
     pub cpu_usage: f32,
     pub cpu_frequency: u64,
     pub cpu_cores: usize,
+    pub physical_cores: usize,
 }
 
 #[derive(Serialize, Deserialize)]
