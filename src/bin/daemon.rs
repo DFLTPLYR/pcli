@@ -19,8 +19,8 @@ fn main() {
 
     let listener = UnixListener::bind(socket_path).unwrap();
     let clients = Arc::new(Mutex::new(Vec::new()));
-
     let clients_accept = Arc::clone(&clients);
+
     thread::spawn(move || {
         for stream in listener.incoming().flatten() {
             clients_accept.lock().unwrap().push(stream);
