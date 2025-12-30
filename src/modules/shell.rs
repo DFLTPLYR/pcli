@@ -80,6 +80,7 @@ fn qs_ipc_caller(props: &String) {
         eprintln!("Config path not found.");
     }
 }
+
 fn home_relative(path: &str) -> String {
     if let Ok(home) = std::env::var("HOME")
         && path.starts_with(&home)

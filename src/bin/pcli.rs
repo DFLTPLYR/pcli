@@ -1,9 +1,14 @@
+use std::{
+    io::{BufRead, BufReader, Write},
+    os::unix::net::UnixStream,
+};
+
 // cargo imports
 use clap::Parser;
 
 // local imports
 use pcli::Commands;
-use pcli::modules::{hardware, shell};
+use pcli::modules::shell;
 
 #[derive(Parser)]
 #[command(name = "pcli")]
@@ -18,11 +23,23 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     match &cli.command {
         Commands::Hardware => {
-            hardware::get_hardware_info()?;
+            send_request("hardware_info".to_string())?;
+            // daemon_command::get_hardware_info()?;
         }
         Commands::Launch { target } => {
             shell::shell_query(target);
         }
+    }
+    Ok(())
+}
+
+pub fn send_request(req: String) -> Result<(), Box<dyn std::error::Error>> {
+    let mut stream = UnixStream::connect("/tmp/sysinfo.sock")?;
+    writeln!(stream, "{}", req)?;
+    let reader = BufReader::new(stream);
+    for line in reader.lines() {
+        let line = line?;
+        println!("{}", line);
     }
     Ok(())
 }
