@@ -70,6 +70,7 @@ pub struct GpuInfo {
 pub enum Commands {
     /// Get hardware information
     Hardware,
+    FocusedWindow,
     /// Shell actions
     Launch {
         #[clap(subcommand)]

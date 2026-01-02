@@ -1,10 +1,9 @@
+// cargo imports
+use clap::Parser;
 use std::{
     io::{BufRead, BufReader, Write},
     os::unix::net::UnixStream,
 };
-
-// cargo imports
-use clap::Parser;
 
 // local imports
 use pcli::Commands;
@@ -24,6 +23,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     match &cli.command {
         Commands::Hardware => {
             send_request("hardware_info".to_string())?;
+        }
+        Commands::FocusedWindow => {
+            send_request("focused_window".to_string())?;
         }
         Commands::Launch { target } => {
             shell::shell_query(target);

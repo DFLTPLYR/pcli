@@ -31,6 +31,9 @@ fn handle_client(stream: UnixStream) {
             "hardware_info" => {
                 let _ = get_hardware_info(stream);
             }
+            "focused_window" => {
+                let _ = writeln!(&stream, "Focused window info not implemented yet.");
+            }
             other => {
                 println!("Unknown request: {}", other);
             }
