@@ -24,7 +24,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     match &cli.command {
         Commands::Hardware => {
             send_request("hardware_info".to_string())?;
-            // daemon_command::get_hardware_info()?;
         }
         Commands::Launch { target } => {
             shell::shell_query(target);

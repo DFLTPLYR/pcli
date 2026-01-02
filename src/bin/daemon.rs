@@ -31,7 +31,6 @@ fn handle_client(stream: UnixStream) {
             "hardware_info" => {
                 let _ = get_hardware_info(stream);
             }
-            "generate_color_pallete" => {}
             other => {
                 println!("Unknown request: {}", other);
             }

@@ -1,6 +1,3 @@
-use niri_ipc::Request;
-use niri_ipc::socket::Socket;
-
 use crate::LaunchTarget;
 use std::process::Command;
 
