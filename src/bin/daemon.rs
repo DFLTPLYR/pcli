@@ -10,7 +10,7 @@ use std::{
 use sysinfo::{Disks, Networks, System};
 
 // local imports
-use pcli::{GpuInfo, SystemCPU, SystemMemory, SystemStatus};
+use pcli::{DesktopEnvironment, GpuInfo, SystemCPU, SystemMemory, SystemStatus};
 
 fn main() {
     let socket_path = "/tmp/sysinfo.sock";
@@ -32,7 +32,10 @@ fn handle_client(stream: UnixStream) {
                 let _ = get_hardware_info(stream);
             }
             "focused_window" => {
-                let _ = writeln!(&stream, "Focused window info not implemented yet.");
+                match DesktopEnvironment::from_env() {
+                    DesktopEnvironment::Niri => {}
+                    DesktopEnvironment::Unknown => { /* handle others */ }
+                }
             }
             other => {
                 println!("Unknown request: {}", other);

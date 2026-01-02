@@ -1,7 +1,34 @@
+use std::process::Command;
+
 use clap::Subcommand;
 use serde::{Deserialize, Serialize};
 
 pub mod modules;
+
+pub enum DesktopEnvironment {
+    Niri,
+    Unknown,
+}
+
+#[allow(dead_code)]
+impl DesktopEnvironment {
+    pub fn from_env() -> Self {
+        match std::env::var("XDG_CURRENT_DESKTOP") {
+            Ok(val) if val == "Niri" => DesktopEnvironment::Niri,
+            _ => DesktopEnvironment::Unknown,
+        }
+    }
+}
+
+// Check if 'qs' process is running
+fn is_qs_running() -> bool {
+    Command::new("pgrep")
+        .arg("-x")
+        .arg("qs")
+        .output()
+        .map(|output| output.status.success())
+        .unwrap_or(false)
+}
 
 #[derive(Serialize, Deserialize)]
 pub struct SystemStatus {

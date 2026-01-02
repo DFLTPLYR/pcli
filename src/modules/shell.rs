@@ -1,19 +1,5 @@
-use crate::LaunchTarget;
+use crate::{DesktopEnvironment, LaunchTarget, is_qs_running};
 use std::process::Command;
-
-enum DesktopEnvironment {
-    Niri,
-    Unknown,
-}
-
-impl DesktopEnvironment {
-    fn from_env() -> Self {
-        match std::env::var("XDG_CURRENT_DESKTOP") {
-            Ok(val) if val == "Niri" => DesktopEnvironment::Niri,
-            _ => DesktopEnvironment::Unknown,
-        }
-    }
-}
 
 pub fn shell_query(target: &LaunchTarget) {
     match target {
@@ -34,16 +20,6 @@ fn compositor_action(action: &str) {
         }
         DesktopEnvironment::Unknown => { /* handle others */ }
     }
-}
-
-// Check if 'qs' process is running
-fn is_qs_running() -> bool {
-    Command::new("pgrep")
-        .arg("-x")
-        .arg("qs")
-        .output()
-        .map(|output| output.status.success())
-        .unwrap_or(false)
 }
 
 // a wrapper to call qs ipc commands
