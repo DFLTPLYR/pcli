@@ -35,7 +35,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 pub fn send_request(req: String) -> Result<(), Box<dyn std::error::Error>> {
-    let mut stream = UnixStream::connect("/tmp/sysinfo.sock")?;
+    let mut stream = UnixStream::connect("/tmp/pdaemon.sock")?;
     writeln!(stream, "{}", req)?;
     let reader = BufReader::new(stream);
     for line in reader.lines() {

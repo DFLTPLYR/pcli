@@ -1,5 +1,6 @@
 // cargo imports
 use gfxinfo::active_gpu;
+use niri_ipc::{Response, socket::Socket};
 use std::{
     fs,
     io::{BufRead, BufReader, Write},
@@ -13,7 +14,7 @@ use sysinfo::{Disks, Networks, System};
 use pcli::{DesktopEnvironment, GpuInfo, SystemCPU, SystemMemory, SystemStatus};
 
 fn main() {
-    let socket_path = "/tmp/sysinfo.sock";
+    let socket_path = "/tmp/pdaemon.sock";
     let _ = fs::remove_file(socket_path);
     let listener = UnixListener::bind(socket_path).unwrap();
     for stream in listener.incoming().flatten() {
@@ -33,7 +34,9 @@ fn handle_client(stream: UnixStream) {
             }
             "compositor_data" => {
                 match DesktopEnvironment::from_env() {
-                    DesktopEnvironment::Niri => {}
+                    DesktopEnvironment::Niri => {
+                        let _ = niri_ipc_listener(stream);
+                    }
                     DesktopEnvironment::Unknown => { /* handle others */ }
                 }
             }
@@ -126,4 +129,18 @@ fn get_hardware_info(mut stream: UnixStream) -> std::io::Result<()> {
         let _ = writeln!(stream, "{}", json);
         thread::sleep(Duration::from_secs(1));
     }
+}
+
+fn niri_ipc_listener(mut stream: UnixStream) -> std::io::Result<()> {
+    let mut socket = Socket::connect()?;
+
+    let reply = socket.send(niri_ipc::Request::EventStream)?;
+    if matches!(reply, Ok(Response::Handled)) {
+        let mut read_event = socket.read_events();
+        while let Ok(event) = read_event() {
+            writeln!(stream, "{}", serde_json::to_string(&event).unwrap())?;
+        }
+    }
+
+    Ok(())
 }
