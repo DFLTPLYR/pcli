@@ -24,8 +24,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         Commands::Hardware => {
             send_request("hardware_info".to_string())?;
         }
-        Commands::FocusedWindow => {
-            send_request("focused_window".to_string())?;
+        Commands::Compositor => {
+            send_request("compositor_data".to_string())?;
         }
         Commands::Launch { target } => {
             shell::shell_query(target);

@@ -31,7 +31,7 @@ fn handle_client(stream: UnixStream) {
             "hardware_info" => {
                 let _ = get_hardware_info(stream);
             }
-            "focused_window" => {
+            "compositor_data" => {
                 match DesktopEnvironment::from_env() {
                     DesktopEnvironment::Niri => {}
                     DesktopEnvironment::Unknown => { /* handle others */ }
