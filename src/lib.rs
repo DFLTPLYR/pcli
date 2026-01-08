@@ -110,4 +110,5 @@ pub enum LaunchTarget {
     WallpaperPicker,
     AppLauncher,
     ExtendedBar,
+    ShellSettings,
 }
