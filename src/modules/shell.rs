@@ -6,7 +6,7 @@ pub fn shell_query(target: &LaunchTarget) {
         LaunchTarget::WallpaperPicker => compositor_action("toggleWallpaperPicker"),
         LaunchTarget::AppLauncher => compositor_action("toggleAppLauncher"),
         LaunchTarget::ExtendedBar => compositor_action("toggleExtendedBar"),
-        LaunchTarget::ShellSettings => compositor_action("toggleShellSettings"),
+        LaunchTarget::ShellSettings => compositor_action("toggleSettingsPanel"),
     }
 }
 
