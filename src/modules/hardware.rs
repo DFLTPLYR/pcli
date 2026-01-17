@@ -6,7 +6,7 @@ use sysinfo::{Disks, Networks, System};
 // local imports
 use crate::{GpuInfo, NetworkInterface, SystemCPU, SystemDisk, SystemMemory, SystemStatus};
 
-pub fn get_hardware_info(mut stream: UnixStream) -> std::io::Result<()> {
+pub fn get_hardware_info(mut stream: UnixStream) {
     let mut sys = System::new_all();
     let mut disks = Disks::new_with_refreshed_list();
     let mut networks = Networks::new_with_refreshed_list();

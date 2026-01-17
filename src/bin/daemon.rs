@@ -30,12 +30,12 @@ fn handle_client(stream: UnixStream) {
         let parts: Vec<&str> = request.trim().split_whitespace().collect();
         match parts.as_slice() {
             ["hardware_info"] => {
-                let _ = hardware::get_hardware_info(stream);
+                hardware::get_hardware_info(stream);
             }
             ["compositor_data"] => {
                 match DesktopEnvironment::from_env() {
                     DesktopEnvironment::Niri => {
-                        let _ = wm::niri_ipc_listener(stream);
+                        wm::niri_ipc_listener(stream);
                     }
                     DesktopEnvironment::Unknown => { /* handle others */ }
                 }
@@ -46,6 +46,7 @@ fn handle_client(stream: UnixStream) {
                         .iter()
                         .map(|s| s.to_string())
                         .collect::<Vec<String>>(),
+                    stream,
                 );
             }
             [other, ..] => {
