@@ -7,7 +7,10 @@ use std::{
 };
 
 // local imports
-use pcli::{DesktopEnvironment, modules::hardware, modules::wm};
+use pcli::{
+    DesktopEnvironment,
+    modules::{hardware, wallpaper, wm},
+};
 
 fn main() {
     let socket_path = "/tmp/pdaemon.sock";
@@ -38,9 +41,12 @@ fn handle_client(stream: UnixStream) {
                 }
             }
             ["generate_palette", targets @ ..] => {
-                let targets: Vec<String> = targets.iter().map(|s| s.to_string()).collect();
-                println!("Targets: {:?}", targets);
-                let _ = stream;
+                wallpaper::generate_color_palette(
+                    targets
+                        .iter()
+                        .map(|s| s.to_string())
+                        .collect::<Vec<String>>(),
+                );
             }
             [other, ..] => {
                 println!("Unknown request: {}", other);
