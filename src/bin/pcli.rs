@@ -1,6 +1,7 @@
 // cargo imports
 use clap::Parser;
 use std::{
+    fmt::Display,
     io::{BufRead, BufReader, Write},
     os::unix::net::UnixStream,
 };
@@ -30,13 +31,27 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         Commands::Launch { target } => {
             shell::shell_query(target);
         }
+        Commands::GeneratePalette { targets } => {
+            send_request_with_opt("generate_palette".to_string(), Some(targets.join(" ")))?;
+        }
     }
     Ok(())
 }
 
 pub fn send_request(req: String) -> Result<(), Box<dyn std::error::Error>> {
+    send_request_with_opt(req, None::<String>)
+}
+
+pub fn send_request_with_opt<T: Display>(
+    req: String,
+    opt: Option<T>,
+) -> Result<(), Box<dyn std::error::Error>> {
     let mut stream = UnixStream::connect("/tmp/pdaemon.sock")?;
-    writeln!(stream, "{}", req)?;
+    if let Some(o) = opt {
+        writeln!(stream, "{} {}", req, o)?;
+    } else {
+        writeln!(stream, "{}", req)?;
+    }
     let reader = BufReader::new(stream);
     for line in reader.lines() {
         let line = line?;

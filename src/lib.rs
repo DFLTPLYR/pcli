@@ -103,6 +103,10 @@ pub enum Commands {
         #[clap(subcommand)]
         target: LaunchTarget,
     },
+    GeneratePalette {
+        #[clap(value_name = "PATH")]
+        targets: Vec<String>,
+    },
 }
 
 #[derive(Subcommand)]
