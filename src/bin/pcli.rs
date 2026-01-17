@@ -31,8 +31,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         Commands::Launch { target } => {
             shell::shell_query(target);
         }
-        Commands::GeneratePalette { targets } => {
-            send_request_with_opt("generate_palette".to_string(), Some(targets.join(" ")))?;
+        Commands::GeneratePalette { type_, paths } => {
+            let args = format!("{} {}", type_, paths.join(" "));
+            send_request_with_opt("generate_palette".to_string(), Some(args))?;
         }
     }
     Ok(())

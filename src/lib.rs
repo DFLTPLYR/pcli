@@ -92,6 +92,13 @@ pub struct GpuInfo {
     pub utilization: f32,
 }
 
+#[derive(Serialize, Deserialize)]
+pub struct PaletteRequest {
+    pub paths: Vec<String>,
+    #[serde(rename = "type")]
+    pub type_: String,
+}
+
 // Cli
 #[derive(Subcommand)]
 pub enum Commands {
@@ -104,8 +111,10 @@ pub enum Commands {
         target: LaunchTarget,
     },
     GeneratePalette {
+        #[clap(long)]
+        type_: String,
         #[clap(value_name = "PATH")]
-        targets: Vec<String>,
+        paths: Vec<String>,
     },
 }
 

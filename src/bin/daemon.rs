@@ -40,14 +40,11 @@ fn handle_client(stream: UnixStream) {
                     DesktopEnvironment::Unknown => { /* handle others */ }
                 }
             }
-            ["generate_palette", targets @ ..] => {
-                wallpaper::generate_color_palette(
-                    targets
-                        .iter()
-                        .map(|s| s.to_string())
-                        .collect::<Vec<String>>(),
-                    stream,
-                );
+            ["generate_palette", rest @ ..] => {
+                let rest_vec: Vec<String> = rest.iter().map(|s| s.to_string()).collect();
+                let type_ = rest_vec[0].clone();
+                let paths = rest_vec[1..].to_vec();
+                wallpaper::generate_color_palette(type_, paths, stream);
             }
             [other, ..] => {
                 println!("Unknown request: {}", other);
