@@ -35,6 +35,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             let args = format!("{} {}", type_, paths.join(" "));
             send_request_with_opt("generate_palette".to_string(), Some(args))?;
         }
+        Commands::Rules => {
+            send_request("window_manager_rules".to_string())?;
+        }
     }
     Ok(())
 }

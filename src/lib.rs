@@ -116,6 +116,7 @@ pub enum Commands {
         #[clap(value_name = "PATH")]
         paths: Vec<String>,
     },
+    Rules,
 }
 
 #[derive(Subcommand)]

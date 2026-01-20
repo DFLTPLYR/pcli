@@ -1,11 +1,11 @@
 // cargo imports
+
 use std::{
     fs,
     io::{BufRead, BufReader},
     os::unix::net::{UnixListener, UnixStream},
     thread,
 };
-
 // local imports
 use pcli::{
     DesktopEnvironment,
@@ -45,6 +45,14 @@ fn handle_client(stream: UnixStream) {
                 let type_ = rest_vec[0].clone();
                 let paths = rest_vec[1..].to_vec();
                 wallpaper::generate_color_palette(type_, paths, stream);
+            }
+            ["window_manager_rules"] => {
+                match DesktopEnvironment::from_env() {
+                    DesktopEnvironment::Niri => {
+                        wm::get_rules(stream);
+                    }
+                    DesktopEnvironment::Unknown => { /* handle others */ }
+                }
             }
             [other, ..] => {
                 println!("Unknown request: {}", other);
