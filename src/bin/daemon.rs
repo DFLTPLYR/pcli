@@ -68,8 +68,9 @@ fn handle_client(stream: UnixStream) {
                     DesktopEnvironment::Niri => wm::get_rules(stream),
                     DesktopEnvironment::Unknown => {}
                 },
-                Request::Weather | Request::WeatherWatcher => {
-                    weather::get_weather_info(stream, None);
+                Request::Weather { use_curl } => {
+                    let use_curl = use_curl.unwrap_or(true);
+                    weather::get_weather_info(stream, use_curl);
                 }
             }
         } else {

@@ -41,7 +41,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             send_request("window_manager_rules".to_string())?;
         }
         Commands::Weather => {
-            send_request("weather_watcher".to_string())?;
+            send_request("weather".to_string())?;
         }
     }
     Ok(())

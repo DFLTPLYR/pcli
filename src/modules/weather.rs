@@ -1,9 +1,28 @@
-use reqwest::blocking;
-use std::{env, io::Write, os::unix::net::UnixStream, thread, time::Duration};
+use reqwest::blocking::Client;
+use std::{env, io::Write, os::unix::net::UnixStream, process::Command, thread, time::Duration};
 use urlencoding::encode;
 
-pub fn get_weather_info(mut stream: UnixStream, client_ip: Option<String>) {
-    let client_ip = client_ip.unwrap_or_else(|| "auto:ip".to_string());
+pub fn get_weather_info(mut stream: UnixStream, use_curl: bool) {
+    let client_ip = if use_curl {
+        match Command::new("curl")
+            .arg("-s")
+            .arg("https://api.ipify.org")
+            .output()
+        {
+            Ok(output) => {
+                if output.status.success() {
+                    String::from_utf8_lossy(&output.stdout).trim().to_string()
+                } else {
+                    // fallback to auto:ip if curl fails
+                    "auto:ip".to_string()
+                }
+            }
+            Err(_) => "auto:ip".to_string(),
+        }
+    } else {
+        "auto:ip".to_string()
+    };
+
     let api_key = match env::var("WEATHER_API") {
         Ok(k) => k,
         Err(_) => {
@@ -12,29 +31,23 @@ pub fn get_weather_info(mut stream: UnixStream, client_ip: Option<String>) {
         }
     };
 
+    let client = Client::new();
+
     loop {
-        // Build the WeatherAPI URL
         let url = format!(
             "https://api.weatherapi.com/v1/forecast.json?key={}&q={}&days=3&aqi=no&alerts=no",
             api_key,
             encode(&client_ip)
         );
 
-        // Fetch the weather
-        let resp = blocking::get(&url);
-
-        match resp {
-            Ok(r) => {
-                if !r.status().is_success() {
-                    let _ = writeln!(
-                        stream,
-                        r#"{{"error":"Failed to fetch weather data: {}"}}"#,
-                        r.status()
-                    );
-                } else {
-                    match r.text() {
+        match client.get(&url).send() {
+            Ok(resp) => {
+                if resp.status().is_success() {
+                    match resp.text() {
                         Ok(text) => {
-                            let _ = writeln!(stream, "{}", text);
+                            if writeln!(stream, "{}", text).is_err() {
+                                break; // client disconnected
+                            }
                         }
                         Err(_) => {
                             let _ = writeln!(
@@ -43,6 +56,12 @@ pub fn get_weather_info(mut stream: UnixStream, client_ip: Option<String>) {
                             );
                         }
                     }
+                } else {
+                    let _ = writeln!(
+                        stream,
+                        r#"{{"error":"Failed to fetch weather data: {}"}}"#,
+                        resp.status()
+                    );
                 }
             }
             Err(e) => {
@@ -50,7 +69,6 @@ pub fn get_weather_info(mut stream: UnixStream, client_ip: Option<String>) {
             }
         }
 
-        // Sleep between updates (e.g., every 60 seconds)
         thread::sleep(Duration::from_secs(60));
     }
 }

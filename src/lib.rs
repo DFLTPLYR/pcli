@@ -134,12 +134,10 @@ pub enum Request {
     CompositorData,
     GeneratePalette { type_: String, paths: Vec<String> },
     WindowManagerRules,
-    Weather,
-    WeatherWatcher,
+    Weather { use_curl: Option<bool> },
 }
 
 impl Request {
-    // Parse a string into a Request
     pub fn from_string(s: &str) -> Option<Self> {
         let parts: Vec<&str> = s.trim().split_whitespace().collect();
         match parts.as_slice() {
@@ -150,8 +148,15 @@ impl Request {
                 paths: rest.iter().map(|s| s.to_string()).collect(),
             }),
             ["window_manager_rules"] => Some(Request::WindowManagerRules),
-            ["weather"] => Some(Request::Weather),
-            ["weather_watcher"] => Some(Request::WeatherWatcher),
+            ["weather"] => Some(Request::Weather { use_curl: None }),
+            ["weather", s] => {
+                let val = match s.to_lowercase().as_str() {
+                    "true" => Some(true),
+                    "false" => Some(false),
+                    _ => None,
+                };
+                Some(Request::Weather { use_curl: val })
+            }
             _ => None,
         }
     }
