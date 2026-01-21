@@ -1,6 +1,7 @@
 // cargo imports
 use clap::Parser;
 use std::{
+    env,
     fmt::Display,
     io::{BufRead, BufReader, Write},
     os::unix::net::UnixStream,
@@ -53,7 +54,11 @@ pub fn send_request_with_opt<T: Display>(
     req: String,
     opt: Option<T>,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let mut stream = UnixStream::connect("/tmp/pdaemon.sock")?;
+    let runtime_dir = env::var("XDG_RUNTIME_DIR").expect("XDG_RUNTIME_DIR is not set");
+
+    let socket_path = format!("{}/pdaemon.sock", runtime_dir);
+
+    let mut stream = UnixStream::connect(socket_path)?;
     if let Some(o) = opt {
         writeln!(stream, "{} {}", req, o)?;
     } else {
