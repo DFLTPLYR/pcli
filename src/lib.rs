@@ -127,3 +127,32 @@ pub enum LaunchTarget {
     ExtendedBar,
     ShellSettings,
 }
+
+#[derive(Debug)]
+pub enum Request {
+    HardwareInfo,
+    CompositorData,
+    GeneratePalette { type_: String, paths: Vec<String> },
+    WindowManagerRules,
+    Weather,
+    WeatherWatcher,
+}
+
+impl Request {
+    // Parse a string into a Request
+    pub fn from_string(s: &str) -> Option<Self> {
+        let parts: Vec<&str> = s.trim().split_whitespace().collect();
+        match parts.as_slice() {
+            ["hardware_info"] => Some(Request::HardwareInfo),
+            ["compositor_data"] => Some(Request::CompositorData),
+            ["generate_palette", type_, rest @ ..] => Some(Request::GeneratePalette {
+                type_: type_.to_string(),
+                paths: rest.iter().map(|s| s.to_string()).collect(),
+            }),
+            ["window_manager_rules"] => Some(Request::WindowManagerRules),
+            ["weather"] => Some(Request::Weather),
+            ["weather_watcher"] => Some(Request::WeatherWatcher),
+            _ => None,
+        }
+    }
+}

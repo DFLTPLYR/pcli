@@ -11,7 +11,7 @@ use std::{
 };
 // local imports
 use pcli::{
-    DesktopEnvironment,
+    DesktopEnvironment, Request,
     modules::{hardware, wallpaper, weather, wm},
 };
 
@@ -48,42 +48,31 @@ fn main() -> io::Result<()> {
 
 fn handle_client(stream: UnixStream) {
     let mut reader = BufReader::new(&stream);
-    let mut request = String::new();
+    let mut request_str = String::new();
 
-    if reader.read_line(&mut request).is_ok() {
-        let parts: Vec<&str> = request.trim().split_whitespace().collect();
-
-        match parts.as_slice() {
-            ["hardware_info"] => {
-                hardware::get_hardware_info(stream);
-            }
-            ["compositor_data"] => match DesktopEnvironment::from_env() {
-                DesktopEnvironment::Niri => {
-                    wm::niri_ipc_listener(stream);
+    if reader.read_line(&mut request_str).is_ok() {
+        if let Some(request) = Request::from_string(&request_str) {
+            match request {
+                Request::HardwareInfo => {
+                    hardware::get_hardware_info(stream);
                 }
-                DesktopEnvironment::Unknown => {}
-            },
-            ["generate_palette", rest @ ..] => {
-                let rest_vec: Vec<String> = rest.iter().map(|s| s.to_string()).collect();
-                let type_ = rest_vec[0].clone();
-                let paths = rest_vec[1..].to_vec();
-                wallpaper::generate_color_palette(type_, paths, stream);
-            }
-            ["window_manager_rules"] => match DesktopEnvironment::from_env() {
-                DesktopEnvironment::Niri => {
-                    wm::get_rules(stream);
+                Request::CompositorData => match DesktopEnvironment::from_env() {
+                    DesktopEnvironment::Niri => wm::niri_ipc_listener(stream),
+                    DesktopEnvironment::Unknown => {}
+                },
+                Request::GeneratePalette { type_, paths } => {
+                    wallpaper::generate_color_palette(type_, paths, stream);
                 }
-                DesktopEnvironment::Unknown => {}
-            },
-            ["weather"] | ["weather_watcher"] => {
-                weather::get_weather_info(stream, None);
+                Request::WindowManagerRules => match DesktopEnvironment::from_env() {
+                    DesktopEnvironment::Niri => wm::get_rules(stream),
+                    DesktopEnvironment::Unknown => {}
+                },
+                Request::Weather | Request::WeatherWatcher => {
+                    weather::get_weather_info(stream, None);
+                }
             }
-            _ => {
-                println!("Unknown request");
-            }
+        } else {
+            println!("Unknown request: {}", request_str.trim());
         }
-
-        // 🔴 IMPORTANT: keep socket alive briefly
-        std::thread::sleep(std::time::Duration::from_millis(100));
     }
 }
