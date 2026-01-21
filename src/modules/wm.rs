@@ -4,8 +4,10 @@ use serde_json;
 // cargo imports
 use niri_ipc::{Response, socket::Socket};
 use std::{
+    env,
     fs::File,
     io::{self, Read, Write},
+    net::Shutdown,
     os::unix::net::UnixStream,
     path::PathBuf,
 };
@@ -32,7 +34,7 @@ struct WindowRule {
 }
 
 pub fn get_rules(mut stream: UnixStream) {
-    let home = std::env::var("HOME")
+    let home = env::var("HOME")
         .map_err(|_| io::Error::new(io::ErrorKind::NotFound, "HOME not set"))
         .unwrap();
 
@@ -103,5 +105,5 @@ pub fn get_rules(mut stream: UnixStream) {
     stream
         .write_all(json.as_bytes())
         .expect("Failed to write to stream");
-    stream.shutdown(std::net::Shutdown::Write).unwrap();
+    stream.shutdown(Shutdown::Write).unwrap();
 }

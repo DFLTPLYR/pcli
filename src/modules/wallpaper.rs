@@ -1,4 +1,4 @@
-use std::{io::Write, os::unix::net::UnixStream, process::Command};
+use std::{io::Write, net::Shutdown, os::unix::net::UnixStream, process::Command};
 
 pub fn generate_color_palette(type_: String, paths: Vec<String>, mut stream: UnixStream) {
     if let Some(path) = combine_wallpaper(paths) {
@@ -20,7 +20,7 @@ pub fn generate_color_palette(type_: String, paths: Vec<String>, mut stream: Uni
         writeln!(stream, "false").expect("Failed to write to stream");
     }
     stream
-        .shutdown(std::net::Shutdown::Write)
+        .shutdown(Shutdown::Write)
         .expect("Failed to shutdown stream");
 }
 

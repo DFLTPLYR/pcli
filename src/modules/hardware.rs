@@ -20,7 +20,7 @@ pub fn get_hardware_info(mut stream: UnixStream) {
             cpu_architecture: std::env::consts::ARCH.to_string(),
             cpu_usage: sys.global_cpu_usage(),
             cpu_frequency: sys.cpus().get(0).map(|c| c.frequency()).unwrap_or(0),
-            physical_cores: sysinfo::System::physical_core_count().unwrap_or(0),
+            physical_cores: System::physical_core_count().unwrap_or(0),
             cpu_cores: sys.cpus().len(),
         };
 

@@ -1,8 +1,9 @@
 // cargo imports
 
 use std::{
-    env, fs,
-    io::{self, BufRead, BufReader},
+    env,
+    fs::{self, Permissions},
+    io::{self, BufRead, BufReader, ErrorKind},
     os::unix::{
         fs::PermissionsExt,
         net::{UnixListener, UnixStream},
@@ -22,7 +23,7 @@ fn main() -> io::Result<()> {
 
     // Remove stale socket (if any)
     if let Err(e) = fs::remove_file(&socket_path) {
-        if e.kind() != io::ErrorKind::NotFound {
+        if e.kind() != ErrorKind::NotFound {
             return Err(e);
         }
     }
@@ -30,7 +31,7 @@ fn main() -> io::Result<()> {
     let listener = UnixListener::bind(&socket_path)?;
 
     // Explicit permissions (defensive, but correct)
-    fs::set_permissions(&socket_path, fs::Permissions::from_mode(0o600))?;
+    fs::set_permissions(&socket_path, Permissions::from_mode(0o600))?;
 
     for stream in listener.incoming() {
         match stream {

@@ -2,6 +2,7 @@
 use clap::Parser;
 use std::{
     env,
+    error::Error,
     fmt::Display,
     io::{BufRead, BufReader, Write},
     os::unix::net::UnixStream,
@@ -19,7 +20,7 @@ struct Cli {
     command: Commands,
 }
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
+fn main() -> Result<(), Box<dyn Error>> {
     let cli = Cli::parse();
 
     match &cli.command {
@@ -46,14 +47,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-pub fn send_request(req: String) -> Result<(), Box<dyn std::error::Error>> {
+pub fn send_request(req: String) -> Result<(), Box<dyn Error>> {
     send_request_with_opt(req, None::<String>)
 }
 
 pub fn send_request_with_opt<T: Display>(
     req: String,
     opt: Option<T>,
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> Result<(), Box<dyn Error>> {
     let runtime_dir = env::var("XDG_RUNTIME_DIR").expect("XDG_RUNTIME_DIR is not set");
 
     let socket_path = format!("{}/pdaemon.sock", runtime_dir);

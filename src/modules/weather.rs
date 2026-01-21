@@ -1,3 +1,4 @@
+use reqwest::blocking;
 use std::{env, io::Write, os::unix::net::UnixStream, thread, time::Duration};
 use urlencoding::encode;
 
@@ -20,7 +21,7 @@ pub fn get_weather_info(mut stream: UnixStream, client_ip: Option<String>) {
         );
 
         // Fetch the weather
-        let resp = reqwest::blocking::get(&url);
+        let resp = blocking::get(&url);
 
         match resp {
             Ok(r) => {
