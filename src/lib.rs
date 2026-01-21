@@ -117,6 +117,7 @@ pub enum Commands {
         paths: Vec<String>,
     },
     Rules,
+    Weather,
 }
 
 #[derive(Subcommand)]

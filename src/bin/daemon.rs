@@ -9,7 +9,7 @@ use std::{
 // local imports
 use pcli::{
     DesktopEnvironment,
-    modules::{hardware, wallpaper, wm},
+    modules::{hardware, wallpaper, weather, wm},
 };
 
 fn main() {
@@ -53,6 +53,9 @@ fn handle_client(stream: UnixStream) {
                     }
                     DesktopEnvironment::Unknown => { /* handle others */ }
                 }
+            }
+            ["weather_watcher"] => {
+                weather::get_weather_info(stream, None);
             }
             [other, ..] => {
                 println!("Unknown request: {}", other);
