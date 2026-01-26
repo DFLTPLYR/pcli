@@ -8,6 +8,8 @@ pub fn generate_color_palette(type_: String, paths: Vec<String>, mut stream: Uni
             .arg(type_)
             .arg("image")
             .arg(path)
+            .arg("--source-color-index")
+            .arg("0")
             .spawn()
             .expect("Failed to spawn matugen");
         let status = child.wait().expect("Failed to wait for matugen");
