@@ -69,6 +69,6 @@ pub fn get_weather_info(mut stream: UnixStream, use_curl: bool) {
             }
         }
 
-        thread::sleep(Duration::from_secs(60));
+        thread::sleep(Duration::from_hours(1));
     }
 }
