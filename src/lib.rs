@@ -141,8 +141,8 @@ impl Request {
     pub fn from_string(s: &str) -> Option<Self> {
         let parts: Vec<&str> = s.trim().split_whitespace().collect();
         match parts.as_slice() {
-            ["hardware_info"] => Some(Request::HardwareInfo),
-            ["compositor_data"] => Some(Request::CompositorData),
+            ["hardware"] => Some(Request::HardwareInfo),
+            ["compositor"] => Some(Request::CompositorData),
             ["generate_palette", type_, rest @ ..] => Some(Request::GeneratePalette {
                 type_: type_.to_string(),
                 paths: rest.iter().map(|s| s.to_string()).collect(),

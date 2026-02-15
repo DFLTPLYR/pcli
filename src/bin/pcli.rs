@@ -25,10 +25,10 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     match &cli.command {
         Commands::Hardware => {
-            send_request("hardware_info".to_string())?;
+            send_request("hardware".to_string())?;
         }
         Commands::Compositor => {
-            send_request("compositor_data".to_string())?;
+            send_request("compositor".to_string())?;
         }
         Commands::Launch { target } => {
             shell::shell_query(target);
