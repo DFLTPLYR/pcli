@@ -27,41 +27,55 @@ pub struct Config {
 #[derive(Debug, Serialize, Decode)]
 pub struct WindowRule {
     #[knuffel(child)]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub match_: Option<Match>,
 
     // Simple children with single argument
     #[knuffel(child, unwrap(argument))]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub open_on_output: Option<String>,
     #[knuffel(child, unwrap(argument))]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub open_maximized: Option<bool>,
     #[knuffel(child, unwrap(argument))]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub min_height: Option<u32>,
     #[knuffel(child, unwrap(argument))]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub max_height: Option<u32>,
     #[knuffel(child, unwrap(argument))]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub max_width: Option<u32>,
     #[knuffel(child, unwrap(argument))]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub geometry_corner_radius: Option<u32>,
     #[knuffel(child, unwrap(argument))]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub clip_to_geometry: Option<bool>,
 
     #[knuffel(child)]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub default_floating_position: Option<FloatingPosition>,
 }
 #[derive(Debug, Serialize, Decode)]
 pub struct Match {
     #[knuffel(property)]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub app_id: Option<String>,
     #[knuffel(property)]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub title: Option<String>,
 }
 #[derive(Debug, Serialize, Decode)]
 pub struct FloatingPosition {
     #[knuffel(property)]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub x: Option<i32>,
     #[knuffel(property)]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub y: Option<i32>,
     #[knuffel(property)]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub relative_to: Option<String>,
 }
 pub fn get_rules(mut stream: UnixStream) {
