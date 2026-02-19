@@ -1,16 +1,9 @@
-use kdl::KdlDocument;
+use knuffel::Decode;
 use serde::Serialize;
 use serde_json;
 // cargo imports
 use niri_ipc::{Response, socket::Socket};
-use std::{
-    env,
-    fs::File,
-    io::{self, Read, Write},
-    net::Shutdown,
-    os::unix::net::UnixStream,
-    path::PathBuf,
-};
+use std::{env, fs, io::Write, os::unix::net::UnixStream, path::PathBuf};
 
 pub fn niri_ipc_listener(mut stream: UnixStream) {
     let mut socket = Socket::connect().expect("error eeeeeh");
@@ -26,84 +19,60 @@ pub fn niri_ipc_listener(mut stream: UnixStream) {
     }
 }
 
-#[derive(Debug, Serialize)]
-struct WindowRule {
-    args: Vec<String>,
-    props: Vec<(String, String)>,
-    children: Vec<(String, String)>,
+#[derive(Debug, Serialize, Decode)]
+pub struct Config {
+    #[knuffel(children(name = "window-rule"))]
+    pub window_rules: Vec<WindowRule>,
 }
+#[derive(Debug, Serialize, Decode)]
+pub struct WindowRule {
+    #[knuffel(child)]
+    pub match_: Option<Match>,
 
+    // Simple children with single argument
+    #[knuffel(child, unwrap(argument))]
+    pub open_on_output: Option<String>,
+    #[knuffel(child, unwrap(argument))]
+    pub open_maximized: Option<bool>,
+    #[knuffel(child, unwrap(argument))]
+    pub min_height: Option<u32>,
+    #[knuffel(child, unwrap(argument))]
+    pub max_height: Option<u32>,
+    #[knuffel(child, unwrap(argument))]
+    pub max_width: Option<u32>,
+    #[knuffel(child, unwrap(argument))]
+    pub geometry_corner_radius: Option<u32>,
+    #[knuffel(child, unwrap(argument))]
+    pub clip_to_geometry: Option<bool>,
+
+    #[knuffel(child)]
+    pub default_floating_position: Option<FloatingPosition>,
+}
+#[derive(Debug, Serialize, Decode)]
+pub struct Match {
+    #[knuffel(property)]
+    pub app_id: Option<String>,
+    #[knuffel(property)]
+    pub title: Option<String>,
+}
+#[derive(Debug, Serialize, Decode)]
+pub struct FloatingPosition {
+    #[knuffel(property)]
+    pub x: Option<i32>,
+    #[knuffel(property)]
+    pub y: Option<i32>,
+    #[knuffel(property)]
+    pub relative_to: Option<String>,
+}
 pub fn get_rules(mut stream: UnixStream) {
-    let home = env::var("HOME")
-        .map_err(|_| io::Error::new(io::ErrorKind::NotFound, "HOME not set"))
-        .unwrap();
+    let home = env::var("HOME").unwrap();
+    let path = PathBuf::from(home).join(".config/niri/modules/rules.kdl");
 
-    let path = PathBuf::from(home)
-        .join(".config")
-        .join("niri")
-        .join("modules")
-        .join("rules.kdl");
+    let content = fs::read_to_string(&path).unwrap();
 
-    // Re-open file to parse (since io::copy moves the cursor)
-    let mut file = File::open(&path).expect("rules.kdl not found");
-    let mut content = String::new();
-    file.read_to_string(&mut content).unwrap();
+    // Parse directly into your struct!
+    let rules: Config = knuffel::parse("rules.kdl", &content).expect("Failed to parse");
 
-    // Parse KDL
-    let mut doc: KdlDocument = content.parse().expect("Failed to parse KDL");
-    doc.ensure_v2();
-
-    // Collect window rules
-    let mut window_rules: Vec<WindowRule> = Vec::new();
-
-    for node in doc.nodes() {
-        if node.name().value() == "window-rule" {
-            // Extract arguments (unnamed)
-            let args: Vec<String> = node
-                .entries()
-                .iter()
-                .filter_map(|e| e.value().as_string().map(|s| s.to_string()))
-                .collect();
-
-            // Extract properties (named)
-            let props: Vec<(String, String)> = node
-                .entries()
-                .iter()
-                .filter_map(|e| {
-                    e.name().and_then(|n| {
-                        e.value()
-                            .as_string()
-                            .map(|v| (n.value().to_string(), v.to_string()))
-                    })
-                })
-                .collect();
-
-            // Extract children nodes (name + first argument)
-            let children: Vec<(String, String)> = node
-                .children()
-                .unwrap_or(&KdlDocument::new())
-                .nodes()
-                .iter()
-                .filter_map(|child| {
-                    let value = child.entries().get(0)?.value().as_string()?.to_string();
-                    Some((child.name().value().to_string(), value))
-                })
-                .collect();
-
-            window_rules.push(WindowRule {
-                args,
-                props,
-                children,
-            });
-        }
-    }
-
-    // Serialize to JSON
-    let json = serde_json::to_string(&window_rules).expect("Failed to serialize to JSON");
-
-    // Send over UnixStream
-    stream
-        .write_all(json.as_bytes())
-        .expect("Failed to write to stream");
-    stream.shutdown(Shutdown::Write).unwrap();
+    let json = serde_json::to_string_pretty(&rules.window_rules).unwrap();
+    stream.write_all(json.as_bytes()).unwrap();
 }
