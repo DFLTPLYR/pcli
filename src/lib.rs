@@ -7,6 +7,7 @@ pub mod modules;
 
 pub enum DesktopEnvironment {
     Niri,
+    Hyprland,
     Unknown,
 }
 
@@ -15,6 +16,7 @@ impl DesktopEnvironment {
     pub fn from_env() -> Self {
         match std::env::var("XDG_CURRENT_DESKTOP") {
             Ok(val) if val == "Niri" => DesktopEnvironment::Niri,
+            Ok(val) if val == "Hyprland" => DesktopEnvironment::Hyprland,
             _ => DesktopEnvironment::Unknown,
         }
     }

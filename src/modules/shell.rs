@@ -1,4 +1,4 @@
-use crate::{DesktopEnvironment, LaunchTarget, is_qs_running};
+use crate::{LaunchTarget, is_qs_running};
 use std::process::Command;
 
 pub fn shell_query(target: &LaunchTarget) {
@@ -12,14 +12,9 @@ pub fn shell_query(target: &LaunchTarget) {
 
 // compositor actions based on wayland compositor type
 fn compositor_action(action: &str) {
-    match DesktopEnvironment::from_env() {
-        DesktopEnvironment::Niri => {
-            let qs = is_qs_running();
-            if qs {
-                qs_ipc_caller(&action.to_string());
-            }
-        }
-        DesktopEnvironment::Unknown => { /* handle others */ }
+    let qs = is_qs_running();
+    if qs {
+        qs_ipc_caller(&action.to_string());
     }
 }
 

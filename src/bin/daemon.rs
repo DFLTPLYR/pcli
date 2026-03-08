@@ -8,14 +8,14 @@ use std::{
         fs::PermissionsExt,
         net::{UnixListener, UnixStream},
     },
-    sync::Arc,
     sync::atomic::{AtomicBool, Ordering},
+    sync::Arc,
     thread,
 };
 // local imports
 use pcli::{
-    DesktopEnvironment, Request,
     modules::{hardware, wallpaper, weather, wm},
+    DesktopEnvironment, Request,
 };
 
 fn main() -> io::Result<()> {
@@ -83,6 +83,7 @@ fn handle_client(stream: UnixStream, running: Arc<AtomicBool>) {
                 }
                 Request::CompositorData => match DesktopEnvironment::from_env() {
                     DesktopEnvironment::Niri => wm::niri_ipc_listener(stream, running),
+                    DesktopEnvironment::Hyprland => wm::hyprland_ipc_listener(stream, running),
                     DesktopEnvironment::Unknown => {}
                 },
                 Request::GeneratePalette { type_, paths } => {
@@ -90,6 +91,7 @@ fn handle_client(stream: UnixStream, running: Arc<AtomicBool>) {
                 }
                 Request::WindowManagerRules => match DesktopEnvironment::from_env() {
                     DesktopEnvironment::Niri => wm::get_rules(stream),
+                    DesktopEnvironment::Hyprland => {}
                     DesktopEnvironment::Unknown => {}
                 },
                 Request::Weather { use_curl } => {
