@@ -4,6 +4,7 @@ use std::{
     io::Write,
     os::unix::net::UnixStream,
     process::Command,
+    sync::atomic::{AtomicBool, Ordering},
     sync::{Arc, LazyLock, Mutex},
     thread,
     time::{Duration, Instant},
@@ -13,7 +14,12 @@ use urlencoding::encode;
 static WEATHER_CACHE: LazyLock<Arc<Mutex<Option<(String, Instant)>>>> =
     LazyLock::new(|| Arc::new(Mutex::new(None)));
 
-pub fn get_weather_info(mut stream: UnixStream, use_curl: bool) {
+fn clear_cache() {
+    let mut cache = WEATHER_CACHE.lock().unwrap();
+    *cache = None;
+}
+
+pub fn get_weather_info(mut stream: UnixStream, use_curl: bool, running: Arc<AtomicBool>) {
     let client_ip = if use_curl {
         match Command::new("curl")
             .arg("-s")
@@ -24,7 +30,6 @@ pub fn get_weather_info(mut stream: UnixStream, use_curl: bool) {
                 if output.status.success() {
                     String::from_utf8_lossy(&output.stdout).trim().to_string()
                 } else {
-                    // fallback to auto:ip if curl fails
                     "auto:ip".to_string()
                 }
             }
@@ -42,9 +47,11 @@ pub fn get_weather_info(mut stream: UnixStream, use_curl: bool) {
         }
     };
 
-    let client = Client::new();
-
     loop {
+        if !running.load(Ordering::SeqCst) {
+            break;
+        }
+
         let now = Instant::now();
         let cached_data = {
             let cache = WEATHER_CACHE.lock().unwrap();
@@ -59,32 +66,29 @@ pub fn get_weather_info(mut stream: UnixStream, use_curl: bool) {
         let weather_data = match cached_data {
             Some(data) => data,
             None => {
-                // Fetch fresh data
+                let client = Client::new();
                 let url = format!(
                     "https://api.weatherapi.com/v1/forecast.json?key={}&q={}&days=3&aqi=no&alerts=no",
                     api_key,
                     encode(&client_ip)
                 );
                 match client.get(&url).send() {
-                    Ok(resp) if resp.status().is_success() => {
-                        match resp.text() {
-                            Ok(text) => {
-                                // Update cache
-                                {
-                                    let mut cache = WEATHER_CACHE.lock().unwrap();
-                                    *cache = Some((text.clone(), now));
-                                }
-                                text
+                    Ok(resp) if resp.status().is_success() => match resp.text() {
+                        Ok(text) => {
+                            {
+                                let mut cache = WEATHER_CACHE.lock().unwrap();
+                                *cache = Some((text.clone(), now));
                             }
-                            Err(_) => {
-                                let _ = writeln!(
-                                    stream,
-                                    r#"{{"error":"Failed to read weather response"}}"#
-                                );
-                                continue;
-                            }
+                            text
                         }
-                    }
+                        Err(_) => {
+                            let _ = writeln!(
+                                stream,
+                                r#"{{"error":"Failed to read weather response"}}"#
+                            );
+                            continue;
+                        }
+                    },
                     Ok(resp) => {
                         let _ = writeln!(
                             stream,
@@ -101,8 +105,10 @@ pub fn get_weather_info(mut stream: UnixStream, use_curl: bool) {
             }
         };
         if writeln!(stream, "{}", weather_data).is_err() {
-            break; // client disconnected
+            break;
         }
-        thread::sleep(Duration::from_secs(60)); // Check every minute for new connections
+        thread::sleep(Duration::from_secs(60));
     }
+
+    clear_cache();
 }

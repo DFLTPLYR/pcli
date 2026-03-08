@@ -8,6 +8,8 @@ use std::{
         fs::PermissionsExt,
         net::{UnixListener, UnixStream},
     },
+    sync::Arc,
+    sync::atomic::{AtomicBool, Ordering},
     thread,
 };
 // local imports
@@ -33,21 +35,43 @@ fn main() -> io::Result<()> {
     // Explicit permissions (defensive, but correct)
     fs::set_permissions(&socket_path, Permissions::from_mode(0o600))?;
 
-    for stream in listener.incoming() {
-        match stream {
-            Ok(stream) => {
+    // Set up signal handler for graceful shutdown
+    let running = Arc::new(AtomicBool::new(true));
+    let running_clone = running.clone();
+
+    ctrlc::set_handler(move || {
+        running_clone.store(false, Ordering::SeqCst);
+    })
+    .expect("Error setting Ctrl-C handler");
+
+    // Set non-blocking so we can check the flag
+    listener.set_nonblocking(true)?;
+
+    while running.load(Ordering::SeqCst) {
+        match listener.accept() {
+            Ok((stream, _)) => {
+                let running_clone = running.clone();
                 thread::spawn(move || {
-                    handle_client(stream);
+                    handle_client(stream, running_clone);
                 });
             }
-            Err(e) => eprintln!("accept error: {e}"),
+            Err(ref e) if e.kind() == ErrorKind::WouldBlock => {
+                // No incoming connections, sleep briefly to avoid busy loop
+                thread::sleep(std::time::Duration::from_millis(50));
+            }
+            Err(e) => {
+                eprintln!("accept error: {e}");
+            }
         }
     }
+
+    // Clean up socket file on exit
+    let _ = fs::remove_file(&socket_path);
 
     Ok(())
 }
 
-fn handle_client(stream: UnixStream) {
+fn handle_client(stream: UnixStream, running: Arc<AtomicBool>) {
     let mut reader = BufReader::new(&stream);
     let mut request_str = String::new();
 
@@ -55,10 +79,10 @@ fn handle_client(stream: UnixStream) {
         if let Some(request) = Request::from_string(&request_str) {
             match request {
                 Request::HardwareInfo => {
-                    hardware::get_hardware_info(stream);
+                    hardware::get_hardware_info(stream, running);
                 }
                 Request::CompositorData => match DesktopEnvironment::from_env() {
-                    DesktopEnvironment::Niri => wm::niri_ipc_listener(stream),
+                    DesktopEnvironment::Niri => wm::niri_ipc_listener(stream, running),
                     DesktopEnvironment::Unknown => {}
                 },
                 Request::GeneratePalette { type_, paths } => {
@@ -70,7 +94,7 @@ fn handle_client(stream: UnixStream) {
                 },
                 Request::Weather { use_curl } => {
                     let use_curl = use_curl.unwrap_or(true);
-                    weather::get_weather_info(stream, use_curl);
+                    weather::get_weather_info(stream, use_curl, running);
                 }
             }
         } else {

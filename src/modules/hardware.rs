@@ -1,17 +1,22 @@
 // cargo imports
 use gfxinfo::active_gpu;
-use std::{io::Write, os::unix::net::UnixStream, thread, time::Duration};
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::{io::Write, os::unix::net::UnixStream, sync::Arc, thread, time::Duration};
 use sysinfo::{Disks, Networks, System};
 
 // local imports
 use crate::{GpuInfo, NetworkInterface, SystemCPU, SystemDisk, SystemMemory, SystemStatus};
 
-pub fn get_hardware_info(mut stream: UnixStream) {
+pub fn get_hardware_info(mut stream: UnixStream, running: Arc<AtomicBool>) {
     let mut sys = System::new_all();
     let mut disks = Disks::new_with_refreshed_list();
     let mut networks = Networks::new_with_refreshed_list();
 
     loop {
+        if !running.load(Ordering::SeqCst) {
+            break;
+        }
+
         sys.refresh_all();
         disks.refresh(true);
         networks.refresh(true);
@@ -85,7 +90,9 @@ pub fn get_hardware_info(mut stream: UnixStream) {
         };
 
         let json = serde_json::to_string(&system_stats).unwrap();
-        let _ = writeln!(stream, "{}", json);
+        if writeln!(stream, "{}", json).is_err() {
+            break;
+        }
         thread::sleep(Duration::from_secs(1));
     }
 }

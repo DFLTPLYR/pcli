@@ -2,10 +2,11 @@ use knuffel::Decode;
 use serde::Serialize;
 use serde_json;
 // cargo imports
-use niri_ipc::{Response, socket::Socket};
-use std::{env, fs, io::Write, os::unix::net::UnixStream, path::PathBuf};
+use niri_ipc::{socket::Socket, Response};
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::{env, fs, io::Write, os::unix::net::UnixStream, path::PathBuf, sync::Arc};
 
-pub fn niri_ipc_listener(mut stream: UnixStream) {
+pub fn niri_ipc_listener(mut stream: UnixStream, running: Arc<AtomicBool>) {
     let mut socket = Socket::connect().expect("error eeeeeh");
 
     let reply = socket
@@ -13,8 +14,15 @@ pub fn niri_ipc_listener(mut stream: UnixStream) {
         .expect("What the helly?!");
     if matches!(reply, Ok(Response::Handled)) {
         let mut read_event = socket.read_events();
-        while let Ok(event) = read_event() {
-            writeln!(stream, "{}", serde_json::to_string(&event).unwrap()).expect("SDYBT");
+        while running.load(Ordering::SeqCst) {
+            match read_event() {
+                Ok(event) => {
+                    if writeln!(stream, "{}", serde_json::to_string(&event).unwrap()).is_err() {
+                        break;
+                    }
+                }
+                Err(_) => break,
+            }
         }
     }
 }
