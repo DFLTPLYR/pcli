@@ -1,12 +1,14 @@
 use knuffel::Decode;
+use niri_ipc::{Event, Response, socket::Socket};
 use serde::Serialize;
 use serde_json;
-// cargo imports
-use niri_ipc::{Response, socket::Socket};
+use std::env;
+use std::fs;
 use std::io::{BufRead, BufReader, Write};
 use std::os::unix::net::UnixStream;
+use std::path::PathBuf;
+use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::{env, fs, path::PathBuf, sync::Arc};
 
 pub fn niri_ipc_listener(mut stream: UnixStream, running: Arc<AtomicBool>) {
     let mut socket = Socket::connect().expect("Error Occured");
@@ -19,14 +21,121 @@ pub fn niri_ipc_listener(mut stream: UnixStream, running: Arc<AtomicBool>) {
         while running.load(Ordering::SeqCst) {
             match read_event() {
                 Ok(event) => {
-                    if writeln!(stream, "{}", serde_json::to_string(&event).unwrap()).is_err() {
-                        break;
+                    handle_niri_event(&event, &mut stream);
+                    if matches!(
+                        event,
+                        Event::WorkspaceActivated { .. }
+                            | Event::WindowFocusChanged { .. }
+                            | Event::WindowFocusTimestampChanged { .. }
+                    ) {
+                        if let Some(focused) = get_focused_output() {
+                            let _ = writeln!(stream, "{}", focused);
+                        }
                     }
                 }
                 Err(_) => break,
             }
         }
     }
+}
+
+fn get_focused_output() -> Option<String> {
+    let mut socket = Socket::connect().ok()?;
+    let reply = socket.send(niri_ipc::Request::FocusedOutput).ok()?;
+    match reply {
+        Ok(Response::FocusedOutput(output)) => Some(
+            serde_json::json!({
+                "FocusedMonitor": {
+                    "name": output.as_ref().map(|o| &o.name)
+                }
+            })
+            .to_string(),
+        ),
+        _ => None,
+    }
+}
+
+fn handle_niri_event(event: &Event, stream: &mut UnixStream) {
+    let json = match event {
+        Event::WorkspacesChanged { workspaces } => serde_json::json!({
+            "WorkspacesChanged": {
+                "workspaces": workspaces.iter().map(|ws| {
+                    serde_json::json!({
+                        "id": ws.id,
+                        "idx": ws.idx,
+                        "name": ws.name,
+                        "output": ws.output,
+                        "is_urgent": ws.is_urgent,
+                        "is_active": ws.is_active,
+                        "is_focused": ws.is_focused,
+                        "active_window_id": ws.active_window_id
+                    })
+                }).collect::<Vec<_>>()
+            }
+        })
+        .to_string(),
+        Event::WindowsChanged { windows } => serde_json::json!({
+            "WindowsChanged": {
+                "windows": windows.iter().map(|w| {
+                    serde_json::json!({
+                        "id": w.id,
+                        "title": w.title,
+                        "app_id": w.app_id,
+                        "pid": w.pid,
+                        "workspace_id": w.workspace_id,
+                        "is_focused": w.is_focused,
+                        "is_floating": w.is_floating,
+                        "is_urgent": w.is_urgent
+                    })
+                }).collect::<Vec<_>>()
+            }
+        })
+        .to_string(),
+        Event::WindowOpenedOrChanged { window } => serde_json::json!({
+            "WindowOpenedOrChanged": {
+                "window": {
+                    "id": window.id,
+                    "title": window.title,
+                    "app_id": window.app_id,
+                    "pid": window.pid,
+                    "workspace_id": window.workspace_id,
+                    "is_focused": window.is_focused,
+                    "is_floating": window.is_floating,
+                    "is_urgent": window.is_urgent
+                }
+            }
+        })
+        .to_string(),
+        Event::WindowClosed { id } => serde_json::json!({
+            "WindowClosed": { "id": id }
+        })
+        .to_string(),
+        Event::WorkspaceActivated { id, focused } => serde_json::json!({
+            "WorkspaceActivated": { "id": id, "focused": focused }
+        })
+        .to_string(),
+        Event::WindowFocusChanged { id } => serde_json::json!({
+            "WindowFocusChanged": { "id": id }
+        })
+        .to_string(),
+        Event::WindowFocusTimestampChanged {
+            id,
+            focus_timestamp,
+        } => serde_json::json!({
+            "WindowFocusTimestampChanged": { "id": id, "focus_timestamp": focus_timestamp }
+        })
+        .to_string(),
+        Event::KeyboardLayoutsChanged { .. } => serde_json::json!({
+            "KeyboardLayoutsChanged": {}
+        })
+        .to_string(),
+        Event::OverviewOpenedOrClosed { is_open } => serde_json::json!({
+            "OverviewOpenedOrClosed": { "is_open": is_open }
+        })
+        .to_string(),
+        _ => return,
+    };
+    let _ = writeln!(stream, "{}", json);
 }
 
 pub fn hyprland_ipc_listener(mut stream: UnixStream, running: Arc<AtomicBool>) {
