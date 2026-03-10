@@ -1,4 +1,5 @@
 // cargo imports
+use ashpd::desktop::file_chooser::SelectedFiles;
 use clap::Parser;
 use std::{
     env,
@@ -42,6 +43,16 @@ fn main() -> Result<(), Box<dyn Error>> {
         }
         Commands::Weather => {
             send_request("weather".to_string())?;
+        }
+        Commands::FilePicker => {
+            let rt = tokio::runtime::Runtime::new()?;
+            rt.block_on(async {
+                let files = SelectedFiles::open_file().send().await?.response()?;
+                for file in files.uris() {
+                    println!("{}", file);
+                }
+                Ok::<(), Box<dyn std::error::Error>>(())
+            })?;
         }
     }
     Ok(())

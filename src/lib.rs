@@ -120,6 +120,7 @@ pub enum Commands {
     },
     Rules,
     Weather,
+    FilePicker,
 }
 
 #[derive(Subcommand)]
