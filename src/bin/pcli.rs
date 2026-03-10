@@ -1,6 +1,6 @@
 // cargo imports
-use ashpd::desktop::file_chooser::SelectedFiles;
 use clap::Parser;
+use rfd::FileDialog;
 use std::{
     env,
     error::Error,
@@ -10,8 +10,8 @@ use std::{
 };
 
 // local imports
-use pcli::Commands;
 use pcli::modules::shell;
+use pcli::Commands;
 
 #[derive(Parser)]
 #[command(name = "pcli")]
@@ -45,14 +45,9 @@ fn main() -> Result<(), Box<dyn Error>> {
             send_request("weather".to_string())?;
         }
         Commands::FilePicker => {
-            let rt = tokio::runtime::Runtime::new()?;
-            rt.block_on(async {
-                let files = SelectedFiles::open_file().send().await?.response()?;
-                for file in files.uris() {
-                    println!("{}", file);
-                }
-                Ok::<(), Box<dyn std::error::Error>>(())
-            })?;
+            if let Some(file) = FileDialog::new().pick_file() {
+                println!("{}", file.display());
+            }
         }
     }
     Ok(())
